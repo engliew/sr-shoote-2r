@@ -1,0 +1,18 @@
+{
+  "name": "deploy",
+  "version": "1.0.0",
+  "description": "Deploy the multiplayer game to a **t3.micro** EC2 instance (AWS Free Tier eligible).",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@aws-sdk/client-ec2": "^3.1081.0",
+    "@aws-sdk/client-sts": "^3.1081.0",
+    "@aws-sdk/util-waiter": "^3.370.0",
+    "@smithy/util-waiter": "^4.5.6"
+  }
+}

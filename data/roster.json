@@ -1,0 +1,50 @@
+[
+  {
+    "id": "kumar",
+    "name": "Kumar",
+    "points": 400,
+    "face": "kumar.png"
+  },
+  {
+    "id": "yc",
+    "name": "YC",
+    "points": 500,
+    "face": "yc.png"
+  },
+  {
+    "id": "andy",
+    "name": "Andy",
+    "points": 350,
+    "face": "andy.png"
+  },
+  {
+    "id": "fiona",
+    "name": "Fiona",
+    "points": 350,
+    "face": "fiona.png"
+  },
+  {
+    "id": "kaifung",
+    "name": "KaiFung",
+    "points": 350,
+    "face": "kaifung.png"
+  },
+  {
+    "id": "fatin",
+    "name": "Fatin",
+    "points": 250,
+    "face": "fatin.png"
+  },
+  {
+    "id": "jay",
+    "name": "Jay",
+    "points": 300,
+    "face": "jay.png"
+  },
+  {
+    "id": "eng",
+    "name": "EngLiew",
+    "points": 50,
+    "face": "eng.png"
+  }
+]

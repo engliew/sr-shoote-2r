@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover"
+    />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <title>SR Shooter 2</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <div id="hud">
+        <div id="hud-left"></div>
+        <div id="hud-right"></div>
+      </div>
+      <div id="game-wrap">
+        <canvas id="game"></canvas>
+        <div id="overlay"><div id="overlay-body"></div></div>
+      </div>
+      <div id="controls">
+        <div class="aim-slider" id="aim-pad">
+          <span class="aim-label">Aim</span>
+          <div class="aim-track">
+            <div class="aim-center-notch"></div>
+            <div id="aim-knob" class="aim-knob"></div>
+          </div>
+        </div>
+        <button id="shoot-btn" type="button">Shoot</button>
+      </div>
+    </div>
+    <script src="/js/net.js"></script>
+    <script src="/js/input.js"></script>
+    <script src="/js/render.js"></script>
+    <script src="/js/game-client.js"></script>
+  </body>
+</html>

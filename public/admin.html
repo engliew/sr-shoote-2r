@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>SR Shooter 2 — Organiser</title>
+    <link rel="stylesheet" href="/css/styles.css" />
+  </head>
+  <body class="admin-page">
+    <div class="admin-wrap admin-wrap-dense">
+      <div id="winner-banner" class="winner-banner hidden"></div>
+
+      <div class="admin-shell">
+        <!-- Left: Status | Water gun side-by-side; Targets fills remaining height -->
+        <aside class="admin-left">
+          <div class="admin-left-top">
+            <div class="card card-dense card-status">
+              <h2>Status</h2>
+              <div id="conn-status"><span class="status-dot"></span>Connecting…</div>
+              <!-- kept for JS updates, not shown -->
+              <span id="phase" class="sr-only">—</span>
+              <span id="timer" class="sr-only">—</span>
+              <p id="msg" class="msg-line"></p>
+              <div class="status-actions">
+                <div class="status-actions-row">
+                  <button class="btn btn-sm" id="btn-start" type="button">Start</button>
+                  <button class="btn btn-sm secondary" id="btn-end" type="button">End</button>
+                </div>
+                <button class="btn btn-sm secondary btn-reset-full" id="btn-reset" type="button">Reset</button>
+              </div>
+              <div class="join-urls-block">
+                <div class="subhead">Join URLs</div>
+                <div id="lan-urls" class="mono join-urls-text">Loading…</div>
+              </div>
+            </div>
+
+            <div class="card card-dense card-water">
+              <h2>Water gun</h2>
+              <div class="slider-row">
+                <label><span>Bullet speed</span><span id="bulletSpeedVal">400</span></label>
+                <input id="bulletSpeed" type="range" min="150" max="1000" step="10" value="400" />
+              </div>
+              <div class="slider-row">
+                <label><span>Shot interval (ms)</span><span id="fireRateVal">1000</span></label>
+                <input id="fireRate" type="range" min="400" max="2000" step="50" value="1000" />
+              </div>
+              <div class="slider-row">
+                <label><span>Spawn rate</span><span id="spawnRateVal">0.5</span></label>
+                <input id="spawnRate" type="range" min="0.3" max="3" step="0.1" value="0.5" />
+              </div>
+            </div>
+          </div>
+
+          <div class="card card-dense card-targets">
+            <h2>Targets</h2>
+            <div class="target-add-row compact target-add-with-file">
+              <input id="target-name" type="text" maxlength="32" placeholder="Name" />
+              <input id="target-points" type="number" min="1" max="9999" value="50" placeholder="Pts" />
+              <label class="file-pick" for="target-face">
+                <span id="target-face-label">PNG face</span>
+                <input id="target-face" type="file" accept="image/png,.png" />
+              </label>
+              <button class="btn btn-sm" id="btn-add-target" type="button">Add</button>
+            </div>
+            <div id="targets-body" class="targets-grid">Loading…</div>
+          </div>
+        </aside>
+
+        <!-- Center: full game, no chrome -->
+        <section class="admin-game-stage">
+          <div id="admin-game-wrap" class="admin-game-wrap borderless">
+            <canvas id="admin-game"></canvas>
+            <div id="admin-game-hud" class="admin-game-hud">Waiting for game state…</div>
+          </div>
+        </section>
+
+        <!-- Right: 2×2 player results -->
+        <aside class="admin-right">
+          <div class="card card-dense card-results">
+            <h2 id="columns-title">Player hits</h2>
+            <div id="player-columns" class="player-columns cols-2x2"></div>
+          </div>
+        </aside>
+      </div>
+    </div>
+    <script src="/js/net.js"></script>
+    <script src="/js/render.js"></script>
+    <script src="/js/admin-client.js"></script>
+  </body>
+</html>

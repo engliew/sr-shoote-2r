@@ -1,0 +1,9 @@
+node_modules/
+deploy/node_modules/
+deploy/*.pem
+deploy/*.tar.gz
+deploy/.deploy-env
+.env
+.DS_Store
+*.log
+npm-debug.log*

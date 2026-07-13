@@ -1,0 +1,17 @@
+[Unit]
+Description=SR Shooter 2 game server
+After=network.target
+
+[Service]
+Type=simple
+User=ec2-user
+WorkingDirectory=/opt/sr-shoote-2r
+EnvironmentFile=/opt/sr-shoote-2r/.env
+ExecStart=/usr/bin/node server/index.js
+Restart=on-failure
+RestartSec=5
+# Allow writing face uploads + roster
+ReadWritePaths=/opt/sr-shoote-2r/public/assets/faces /opt/sr-shoote-2r/data
+
+[Install]
+WantedBy=multi-user.target
