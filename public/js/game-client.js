@@ -102,8 +102,12 @@
           lobby = msg;
           if (joined) {
             if (msg.phase === 'lobby') applyPhaseUi('lobby', msg);
+            else if (msg.phase === 'results' && latestState) {
+              // keep results UI; roster may still update
+            }
           } else {
             ensureJoinScreen(playerMeta && playerMeta.name);
+            refreshJoinRoster();
           }
           updateHud();
           break;
@@ -186,12 +190,55 @@
     else overlay.classList.remove('overlay-popup');
   }
 
+  function playerRosterHtml(players, emptyText) {
+    const list = players || [];
+    if (!list.length) {
+      return `<li class="roster-empty">${escapeHtml(emptyText || 'No one has joined yet')}</li>`;
+    }
+    return list
+      .map((p) => {
+        const you = p.id === playerId ? ' <span class="you-tag">you</span>' : '';
+        const seat = p.seat != null ? p.seat + 1 : '?';
+        const scoreBit =
+          p.score != null && Number(p.score) > 0
+            ? `<span class="roster-score">${p.score} pts</span>`
+            : '';
+        return `<li class="roster-row">
+          <span class="roster-main">
+            <span class="swatch" style="background:${p.color || '#38bdf8'}"></span>
+            <span class="roster-name">${escapeHtml(p.name || 'Player')}${you}</span>
+          </span>
+          <span class="roster-meta">Seat ${seat}${scoreBit ? ' · ' : ''}${scoreBit}</span>
+        </li>`;
+      })
+      .join('');
+  }
+
+  function refreshJoinRoster() {
+    if (uiPhase !== 'join') return;
+    const listEl = overlayBody.querySelector('#join-player-list');
+    const countEl = overlayBody.querySelector('#join-player-count');
+    if (!listEl) return;
+    const players =
+      (lobby && lobby.players) ||
+      (latestState && latestState.players) ||
+      [];
+    const maxP = (lobby && lobby.maxPlayers) || 4;
+    listEl.innerHTML = playerRosterHtml(players, 'Waiting for players to join…');
+    if (countEl) countEl.textContent = `${players.length} / ${maxP} joined`;
+  }
+
   function showJoin(prefillName) {
     uiPhase = 'join';
     joined = false;
     playerId = null;
     setOverlayMode('full');
     const pref = prefillName || '';
+    const players =
+      (lobby && lobby.players) ||
+      (latestState && latestState.players) ||
+      [];
+    const maxP = (lobby && lobby.maxPlayers) || 4;
     overlayBody.innerHTML = `
       <div class="panel">
         <h1>SR Shooter 2</h1>
@@ -200,6 +247,15 @@
         <input id="name" type="text" maxlength="16" placeholder="Player" autocomplete="off"
           enterkeyhint="go" value="${escapeHtml(pref)}" />
         <button class="btn" id="join-btn" type="button">Join game</button>
+        <div class="lobby-roster-block">
+          <div class="lobby-roster-head">
+            <strong>Who’s in</strong>
+            <span id="join-player-count">${players.length} / ${maxP} joined</span>
+          </div>
+          <ul class="player-list" id="join-player-list">
+            ${playerRosterHtml(players, 'Waiting for players to join…')}
+          </ul>
+        </div>
         <p style="margin-top:12px;margin-bottom:0;font-size:12px">
           Aim with the slider · Hold Shoot<br/>
           Desktop: A/D aim · Space shoot
@@ -245,26 +301,44 @@
     });
   }
 
+  function bindStartButton(id) {
+    const btn = document.getElementById(id);
+    if (!btn) return;
+    btn.addEventListener('click', () => {
+      if (!connected || !joined) return;
+      btn.disabled = true;
+      btn.textContent = 'Starting…';
+      net.send({ type: 'start' });
+      setTimeout(() => {
+        if (btn && uiPhase === 'lobby') {
+          btn.disabled = false;
+          btn.textContent = 'Start game';
+        }
+      }, 2500);
+    });
+  }
+
   function showLobby(msg) {
     if (!joined) {
       ensureJoinScreen();
       return;
     }
     const players = (msg && msg.players) || [];
-    const listHtml = players.length
-      ? players
-          .map(
-            (p) =>
-              `<li><span><span class="swatch" style="background:${p.color}"></span>${escapeHtml(
-                p.name
-              )}${p.id === playerId ? ' (you)' : ''}</span><span>Seat ${p.seat + 1}</span></li>`
-          )
-          .join('')
-      : '<li>No players yet</li>';
+    const maxP = (msg && msg.maxPlayers) || 4;
+    const listHtml = playerRosterHtml(players, 'No players yet');
+    const countLabel = `${players.length} / ${maxP} joined`;
+    const canStart = players.length >= 1;
 
     const existingList = overlayBody.querySelector('#lobby-player-list');
     if (uiPhase === 'lobby' && existingList) {
       existingList.innerHTML = listHtml;
+      const countEl = overlayBody.querySelector('#lobby-player-count');
+      if (countEl) countEl.textContent = countLabel;
+      const startBtn = overlayBody.querySelector('#start-btn');
+      if (startBtn) {
+        startBtn.disabled = !canStart;
+        startBtn.textContent = canStart ? 'Start game' : 'Waiting for players…';
+      }
       setOverlayMode('full');
       return;
     }
@@ -274,13 +348,25 @@
     overlayBody.innerHTML = `
       <div class="panel">
         <h1>Lobby</h1>
-        <p>Waiting for organiser to start the next round…</p>
-        <ul class="player-list" id="lobby-player-list">
-          ${listHtml}
-        </ul>
+        <p>When everyone’s ready, tap <strong>Start game</strong> — no admin page needed.</p>
+        <div class="lobby-roster-block">
+          <div class="lobby-roster-head">
+            <strong>Who’s in</strong>
+            <span id="lobby-player-count">${countLabel}</span>
+          </div>
+          <ul class="player-list" id="lobby-player-list">
+            ${listHtml}
+          </ul>
+        </div>
+        <button class="btn" id="start-btn" type="button" ${canStart ? '' : 'disabled'}>
+          ${canStart ? 'Start game' : 'Waiting for players…'}
+        </button>
         <button class="btn secondary" id="leave-btn" type="button">Leave / change name</button>
-        <p style="margin:10px 0 0;font-size:12px">Organiser starts the round from <strong>/admin.html</strong>.</p>
+        <p style="margin:10px 0 0;font-size:12px">
+          Any player can start. Organiser tools still available at <strong>/admin.html</strong>.
+        </p>
       </div>`;
+    bindStartButton('start-btn');
     document.getElementById('leave-btn').addEventListener('click', () => {
       net.send({ type: 'leave' });
       const name = resetLocalSession(true);
@@ -369,9 +455,17 @@
         <div class="results-hits-grid">
           ${playerCards || '<p class="results-no-hits">No scores</p>'}
         </div>
-        <p>Waiting for next round…</p>
+        <button class="btn" id="start-next-btn" type="button">Play again</button>
         <button class="btn secondary" id="leave-results-btn" type="button">Leave / change name</button>
       </div>`;
+    const startNext = document.getElementById('start-next-btn');
+    if (startNext) {
+      startNext.addEventListener('click', () => {
+        startNext.disabled = true;
+        startNext.textContent = 'Starting…';
+        net.send({ type: 'start' });
+      });
+    }
     document.getElementById('leave-results-btn').addEventListener('click', () => {
       net.send({ type: 'leave' });
       const name = resetLocalSession(true);

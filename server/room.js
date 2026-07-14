@@ -110,6 +110,10 @@ class Room {
       case 'input':
         this._input(ws, msg);
         break;
+      case 'start':
+        // Any joined player can start (no admin page required)
+        this._playerStart(ws);
+        break;
       case 'admin':
         this._admin(ws, msg);
         break;
@@ -212,6 +216,38 @@ class Room {
     });
   }
 
+  /** Start countdown from lobby or after results — player or admin path. */
+  _tryStartRound(ws) {
+    if (this.sim.phase === 'countdown' || this.sim.phase === 'playing') {
+      this.send(ws, { type: 'error', message: 'Round already in progress' });
+      return false;
+    }
+    if (this.sim.phase === 'results') {
+      this.sim.fullReset();
+    }
+    const ok = this.sim.startCountdown();
+    if (!ok) {
+      this.send(ws, { type: 'error', message: 'Need at least 1 player to start' });
+      return false;
+    }
+    this.broadcast(this.sim.lobbyPayload());
+    this.broadcast(this.sim.snapshot());
+    return true;
+  }
+
+  _playerStart(ws) {
+    const meta = this.clients.get(ws);
+    if (!meta || meta.role !== 'player' || !meta.playerId) {
+      this.send(ws, { type: 'error', message: 'Join the game first' });
+      return;
+    }
+    if (!this.sim.players.has(meta.playerId)) {
+      this.send(ws, { type: 'error', message: 'Join the game first' });
+      return;
+    }
+    this._tryStartRound(ws);
+  }
+
   _admin(ws, msg) {
     const meta = this.clients.get(ws);
     if (!meta || meta.role !== 'admin') {
@@ -225,17 +261,7 @@ class Room {
     }
 
     if (action === 'start') {
-      // Allow starting a new round from results without a separate reset
-      if (this.sim.phase === 'results') {
-        this.sim.fullReset();
-      }
-      const ok = this.sim.startCountdown();
-      if (!ok) {
-        this.send(ws, { type: 'error', message: 'Need at least 1 player to start' });
-      } else {
-        this.broadcast(this.sim.lobbyPayload());
-        this.broadcast(this.sim.snapshot());
-      }
+      this._tryStartRound(ws);
       return;
     }
 
