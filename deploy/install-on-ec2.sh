@@ -28,6 +28,11 @@ npm install --omit=dev
 mkdir -p public/assets/faces data
 chmod -R u+rwX public/assets/faces data
 
+# Keep HTTPS public URL if Let's Encrypt cert already exists
+if sudo test -f /etc/letsencrypt/live/srshoot.engliew.xyz/fullchain.pem; then
+  PUBLIC_URL="https://srshoot.engliew.xyz"
+fi
+
 cat > .env <<EOF
 NODE_ENV=production
 PORT=${PORT}
@@ -36,9 +41,45 @@ PUBLIC_URL=${PUBLIC_URL}
 EOF
 
 echo "==> Configuring nginx..."
-# Inject port into nginx conf if needed
-sed "s/3850/${PORT}/g" deploy/nginx-sr-shoote-2r.conf | sudo tee /etc/nginx/conf.d/sr-shoote-2r.conf >/dev/null
 sudo rm -f /etc/nginx/conf.d/default.conf
+if sudo test -f /etc/letsencrypt/live/srshoot.engliew.xyz/fullchain.pem; then
+  DOMAIN_NAME="srshoot.engliew.xyz"
+  sudo tee /etc/nginx/conf.d/sr-shoote-2r.conf >/dev/null <<EOF
+map \$http_upgrade \$connection_upgrade {
+    default upgrade;
+    ''      close;
+}
+server {
+    listen 80 default_server;
+    listen [::]:80 default_server;
+    server_name ${DOMAIN_NAME};
+    client_max_body_size 8m;
+    location / { return 301 https://\$host\$request_uri; }
+}
+server {
+    listen 443 ssl default_server;
+    listen [::]:443 ssl default_server;
+    server_name ${DOMAIN_NAME};
+    client_max_body_size 8m;
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN_NAME}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN_NAME}/privkey.pem;
+    location / {
+        proxy_pass http://127.0.0.1:${PORT};
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 86400;
+        proxy_send_timeout 86400;
+    }
+}
+EOF
+else
+  sed "s/3850/${PORT}/g" deploy/nginx-sr-shoote-2r.conf | sudo tee /etc/nginx/conf.d/sr-shoote-2r.conf >/dev/null
+fi
 sudo nginx -t
 sudo systemctl enable nginx
 sudo systemctl restart nginx
